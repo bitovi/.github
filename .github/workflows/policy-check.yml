@@ -1,0 +1,19 @@
+name: Supply chain Min-age policy check
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require min-release-age when package.json exists
+        run: |
+          if [[ -f package.json ]]; then
+            if [[ ! -f .npmrc ]] || ! grep -qE '^min-release-age' .npmrc; then
+              echo "::error::Missing min-release-age in .npmrc. Add: min-release-age=10080"
+              exit 1
+            fi
+          fi
