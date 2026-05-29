@@ -1,9 +1,6 @@
-name: Supply chain Min-age policy check
+name: Supply chain policy checks
 on:
   pull_request:
-  push:
-    branches: [main, master]
-
 jobs:
   policy:
     runs-on: ubuntu-latest
@@ -12,8 +9,27 @@ jobs:
       - name: Require min-release-age when package.json exists
         run: |
           if [[ -f package.json ]]; then
-            if [[ ! -f .npmrc ]] || ! grep -qE '^min-release-age' .npmrc; then
-              echo "::error::Missing min-release-age in .npmrc. Add: min-release-age=10080"
+            if [[ ! -f .npmrc ]]; then
+              echo "::error::No .npmrc found at repo root. Create one containing: min-release-age=10080"
+              exit 1
+            fi
+            if ! grep -qE '^min-release-age' .npmrc; then
+              echo "::error::.npmrc exists but is missing min-release-age. Add this line: min-release-age=10080"
               exit 1
             fi
           fi
+
+  trufflehog:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --results=verified,unknown
