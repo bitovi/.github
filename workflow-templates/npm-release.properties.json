@@ -1,0 +1,7 @@
+{
+  "name": "npm Stage Publish",
+  "description": "Stage an npm release via the org's reusable workflow (OIDC trusted publishing). A maintainer approves with 2FA before it goes live.",
+  "iconName": "octicon package",
+  "categories": ["Continuous integration", "JavaScript", "TypeScript"],
+  "filePatterns": ["package\\.json$"]
+}
