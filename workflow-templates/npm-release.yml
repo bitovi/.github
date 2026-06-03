@@ -12,7 +12,3 @@ jobs:
     permissions:
       contents: read
       id-token: write       
-    with:
-      package-path: "."
-      node-version: "22.14.0"
-      environment: "npm"
