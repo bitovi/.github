@@ -33,3 +33,5 @@ jobs:
     #   dist-tag: next                       # publish under this tag instead of "latest"
     #   node-version: "22.14.0"              # change the Node version used to publish
     #   working-directory: packages/my-pkg   # set if your package is NOT at the repo root
+    #   run-build: false                     # skip the build step if your package builds via prepare/prepack (npm runs it during publish)
+    #   run-tests: false                     # skip tests in the release job (rely on CI having tested the tagged commit)

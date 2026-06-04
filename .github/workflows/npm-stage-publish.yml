@@ -1,8 +1,11 @@
 name: npm Stage Publish
 
 # Reusable OIDC staged-publish to npm. Requires npm >= 11.15.0 and Node >= 22.14.0.
-# Install uses the repo's package manager (pnpm or npm); build/test/publish always
-# run through npm so every consumer shares one version-pinned publish path.
+# Install uses the repo's package manager (pnpm or npm). The build and test steps
+# are optional (run-build / run-tests); when run they, and the publish step, go
+# through npm so every consumer shares one version-pinned publish path. Packages
+# that build via an npm lifecycle hook (prepare/prepack) can set run-build: false
+# and let `npm stage publish` build the tarball itself.
 
 on:
   workflow_call:
@@ -25,6 +28,16 @@ on:
         description: "Path to the package when it isn't at the repo root (monorepos)."
         type: string
         required: false
+      run-build:
+        description: "Run `npm run build` before publishing. Set false if the package builds via an npm lifecycle hook (prepare/prepack) — npm runs those during publish automatically."
+        type: boolean
+        required: false
+        default: true
+      run-tests:
+        description: "Run `npm test` before publishing. Set false to rely on CI having already tested the tagged commit."
+        type: boolean
+        required: false
+        default: true
 
 jobs:
   stage:
@@ -51,6 +64,8 @@ jobs:
           else
             npm ci
           fi
-      - run: npm run build --if-present
-      - run: npm test --if-present
+      - if: ${{ inputs.run-build }}
+        run: npm run build --if-present
+      - if: ${{ inputs.run-tests }}
+        run: npm test --if-present
       - run: npm stage publish --access ${{ inputs.access }} ${{ inputs.dist-tag && format('--tag {0}', inputs.dist-tag) || '' }}
