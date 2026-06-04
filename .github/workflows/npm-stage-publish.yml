@@ -1,23 +1,49 @@
 name: npm Stage Publish
 
+# Requirements: staged publishing needs npm CLI 11.15.0 or later and Node 22.14.0
+# or higher. The npm version is enforced below (`npm install -g npm@^11.15.0`); the
+# Node version is enforced by the default/minimum of the `node-version` input.
+
 on:
   workflow_call:
+    inputs:
+      node-version:
+        description: "Node.js version used to build and publish. Must be 22.14.0 or higher (staged publishing minimum)."
+        type: string
+        required: false
+        default: "22.14.0"
+      access:
+        description: "npm access level: public or restricted. Default public."
+        type: string
+        required: false
+        default: "public"
+      dist-tag:
+        description: "npm dist-tag (e.g. next, beta). Omit to publish as latest."
+        type: string
+        required: false
+      working-directory:
+        description: "Path to the package when it isn't at the repo root (monorepos)."
+        type: string
+        required: false
 
 jobs:
   stage:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write        
+      id-token: write
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory || '.' }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: "22.14.0"
+          node-version: ${{ inputs.node-version }}
           registry-url: "https://registry.npmjs.org"
-          cache: npm
-      - run: npm install -g npm@latest   # need npm 11.15.0+
+          package-manager-cache: false   # never cache in release builds (npm guidance)
+      - run: npm install -g npm@^11.15.0   # staged publishing requires npm CLI 11.15.0 or later
       - run: npm ci
       - run: npm run build --if-present
       - run: npm test --if-present
-      - run: npm stage publish --access public
+      - run: npm stage publish --access ${{ inputs.access }} ${{ inputs.dist-tag && format('--tag {0}', inputs.dist-tag) || '' }}
