@@ -1,8 +1,8 @@
 name: npm Stage Publish
 
-# Requirements: staged publishing needs npm CLI 11.15.0 or later and Node 22.14.0
-# or higher. The npm version is enforced below (`npm install -g npm@^11.15.0`); the
-# Node version is enforced by the default/minimum of the `node-version` input.
+# Reusable OIDC staged-publish to npm. Requires npm >= 11.15.0 and Node >= 22.14.0.
+# Install uses the repo's package manager (pnpm or npm); build/test/publish always
+# run through npm so every consumer shares one version-pinned publish path.
 
 on:
   workflow_call:
@@ -41,9 +41,16 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           registry-url: "https://registry.npmjs.org"
-          package-manager-cache: false   # never cache in release builds (npm guidance)
-      - run: npm install -g npm@^11.15.0   # staged publishing requires npm CLI 11.15.0 or later
-      - run: npm ci
+          package-manager-cache: false   # don't cache in release builds
+      - run: npm install -g npm@^11.15.0   # staged publishing needs npm >= 11.15.0
+      - name: Install dependencies
+        shell: bash
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            corepack enable && pnpm install --frozen-lockfile
+          else
+            npm ci
+          fi
       - run: npm run build --if-present
       - run: npm test --if-present
       - run: npm stage publish --access ${{ inputs.access }} ${{ inputs.dist-tag && format('--tag {0}', inputs.dist-tag) || '' }}
